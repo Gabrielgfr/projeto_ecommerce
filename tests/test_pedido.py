@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch # Para simular dependências como Car
 from decimal import Decimal
 from datetime import datetime
 
-# Ajusta o path para encontrar o módulo ecommerce
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
