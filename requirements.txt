@@ -1,0 +1,6 @@
+# -*- coding: utf-8 -*-
+# Dependências necessárias para rodar os testes do projeto.
+
+pytest
+pytest-mock # Necessário para a fixture 'mocker' usada nos testes de falha (Q7)
+
