@@ -10,24 +10,22 @@ class SistemaPagamento:
         if not 0 <= percentual_desconto_pix <= 100:
             raise ValueError("O percentual de desconto PIX deve estar entre 0 e 100.")
 
-        # Define as taxas como Decimal para precisão financeira
+        # Define as taxas como Decimal
         self.taxa_juros_parcelamento = Decimal(str(taxa_juros_parcelamento)) / Decimal('100.0')  
         self.percentual_desconto_pix = Decimal(str(percentual_desconto_pix)) / Decimal('100.0')
 
     def _autorizar_pagamento(self, valor: Decimal, metodo: str) -> bool:
-        # Simula a autorização de um pagamento.
         print(f"Tentando autorizar pagamento de R$ {valor:.2f} via {metodo}...")
-        # Simula uma chance de 90% de sucesso na autorização
         autorizado = random.random() < 0.9 # 90% de chance de sucesso
-        if autorizado: # Simula sucesso na autorização
+        if autorizado: 
             print("Pagamento autorizado.")
         else:
             print("Falha na autorização do pagamento.")
         return autorizado
 
-    def _verificar_fraude(self, dados_pagamento: dict) -> bool: # Verifica se há suspeita de fraude no pagamento.
+    def _verificar_fraude(self, dados_pagamento: dict) -> bool: 
         print("Verificando possível fraude...")
-        # Simula uma chance baixa (5%) de detectar fraude
+        # chance baixa (5%) de detectar fraude
         suspeita_fraude = random.random() < 0.05
         if suspeita_fraude:
             print("Alerta: Suspeita de fraude detectada!")
@@ -36,11 +34,11 @@ class SistemaPagamento:
             print("Nenhuma suspeita de fraude.")
             return True
 
-    def calcular_valor_parcela(self, valor_total: Decimal, num_parcelas: int) -> Decimal: # Calcula o valor de cada parcela com base no valor total e no número de parcelas.
-        if num_parcelas <= 0: # Verifica se o número de parcelas é positivo
+    def calcular_valor_parcela(self, valor_total: Decimal, num_parcelas: int) -> Decimal: # com base no valor total e no número de parcelas.
+        if num_parcelas <= 0: 
             raise ValueError("O número de parcelas deve ser positivo.")
 
-        valor_total_decimal = Decimal(str(valor_total)) # Converte o valor total para Decimal para precisão financeira
+        valor_total_decimal = Decimal(str(valor_total)) 
 
         if num_parcelas == 1:
             # Pagamento à vista, sem juros
@@ -50,7 +48,7 @@ class SistemaPagamento:
             # Parcelamento sem juros
             valor_parcela = valor_total_decimal / Decimal(num_parcelas)
         else:
-            # Cálculo com juros compostos (Tabela Price simplificada)
+            # juros compostos 
             # M = C * (1 + i)^n * i / ((1 + i)^n - 1)
             taxa = self.taxa_juros_parcelamento
             n = Decimal(num_parcelas)
@@ -68,15 +66,15 @@ class SistemaPagamento:
         if num_parcelas < 1:
             return False, "Número de parcelas inválido.", Decimal('0.0'), None
 
-        # Calcula o valor da parcela e o valor total com juros (se houver)
+        # Calcula o valor da parcela e o valor total com juros se houver
         valor_parcela = self.calcular_valor_parcela(valor_total_decimal, num_parcelas)
         valor_total_pagar = (valor_parcela * Decimal(num_parcelas)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
-        # Simula verificação de fraude
+        #  verificação de fraude
         if not self._verificar_fraude({"valor": valor_total_pagar, "metodo": "Cartão de Crédito"}):
             return False, "Pagamento bloqueado por suspeita de fraude.", Decimal('0.0'), None
 
-        # Simula autorização do pagamento
+        #  autorização do pagamento
         if self._autorizar_pagamento(valor_total_pagar, "Cartão de Crédito"):
             comprovante = self._gerar_comprovante(valor_total_pagar, "Cartão de Crédito", num_parcelas, valor_parcela)
             print(f"Comprovante gerado: {comprovante}")
@@ -96,25 +94,23 @@ class SistemaPagamento:
         print(f"Desconto PIX ({self.percentual_desconto_pix * 100:.1f}%): R$ {desconto:.2f}")
         print(f"Valor a pagar com PIX: R$ {valor_a_pagar:.2f}")
 
-        # Simula verificação de fraude (menos comum em PIX, mas mantido por consistência)
+        # verificação de fraude menos comum em PIX, mantido por consistência
         if not self._verificar_fraude({"valor": valor_a_pagar, "metodo": "PIX"}):
             return False, "Pagamento bloqueado por suspeita de fraude.", Decimal('0.0')
 
-        # Simula autorização/confirmação do PIX
+        # autorização/confirmação do PIX
         if self._autorizar_pagamento(valor_a_pagar, "PIX"):
             comprovante = self._gerar_comprovante(valor_a_pagar, "PIX")
             print(f"Comprovante gerado: {comprovante}")
             return True, "Pagamento PIX confirmado.", valor_a_pagar
         else:
-            # Em um cenário real, a falha no PIX pode ser diferente (ex: timeout, chave inválida)
             return False, "Falha ao confirmar pagamento PIX.", Decimal('0.0')
 
     def processar_reembolso(self, id_transacao_original: str, valor: float) -> bool:
         valor_decimal = Decimal(str(valor)) 
         print(f"Processando reembolso de R$ {valor_decimal:.2f} para transação {id_transacao_original}...")
-        # Simula sucesso no reembolso
-        reembolso_ok = random.random() < 0.95 # Alta chance de sucesso
-        if reembolso_ok:# Se o reembolso for bem-sucedido
+        reembolso_ok = random.random() < 0.95 #chance alta de sucesso
+        if reembolso_ok:
             print("Reembolso processado com sucesso.")
             return True
         else:
@@ -127,7 +123,7 @@ class SistemaPagamento:
         print(f"--- Comprovante de Pagamento ---")
         print(f"ID da Transação: {id_transacao}") 
         print(f"Método: {metodo}") 
-        if metodo == "Cartão de Crédito" and num_parcelas and num_parcelas > 1 and valor_parcela: # Se for parcelado, exibe o número de parcelas e o valor de cada parcela
+        if metodo == "Cartão de Crédito" and num_parcelas and num_parcelas > 1 and valor_parcela: # Se for parcelado, mostra o número de parcelas e o valor de cada parcela
             print(f"Valor Total: R$ {valor_pago:.2f} ({num_parcelas}x de R$ {valor_parcela:.2f})")
         else:
             print(f"Valor Pago: R$ {valor_pago:.2f}")
@@ -147,7 +143,6 @@ class SistemaPagamento:
             self.percentual_desconto_pix = Decimal(str(desconto_pix)) / Decimal('100.0')
             print(f"Desconto PIX atualizado para {desconto_pix:.1f}%.")
 
-# Exemplo de uso 
 if __name__ == '__main__':
     sistema_pag = SistemaPagamento(taxa_juros_parcelamento=3.5, percentual_desconto_pix=10.0)
 
@@ -167,7 +162,7 @@ if __name__ == '__main__':
     sucesso_reembolso = sistema_pag.processar_reembolso("some-transaction-id", 50.0)
     print(f"Resultado Reembolso: {sucesso_reembolso}")
 
-    print("\n--- Teste Cálculo Parcelas (Exemplo) ---")
+    print("\n--- Teste Cálculo Parcelas  ---")
     valor_teste = Decimal('1000.00')
     for n_parc in [1, 3, 6, 12]:
         parcela = sistema_pag.calcular_valor_parcela(valor_teste, n_parc)

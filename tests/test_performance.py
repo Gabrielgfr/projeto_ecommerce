@@ -4,7 +4,6 @@ import pytest
 from unittest.mock import patch
 from decimal import Decimal
 
-# Ajusta o path para encontrar o módulo ecommerce
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -16,7 +15,7 @@ from ecommerce.pedido import Pedido, StatusPedido
 from ecommerce.sistema_ecommerce import SistemaEcommerce
 from ecommerce.sistema_pagamento import SistemaPagamento
 
-# --- Configurações de Performance (Exemplos) ---
+# --- Configurações de Performance  ---
 NUM_ITENS_CARRINHO_PERF = 1000
 NUM_PEDIDOS_VOLUME_PERF = 100
 TEMPO_LIMITE_CARRINHO_MS = 500
@@ -39,7 +38,6 @@ def produtos_para_carrinho():
 def carrinho_perf():
     return Carrinho()
 
-# Teste de adição de múltiplos produtos distintos ao carrinho
 def test_performance_adicao_multiplos_produtos_distintos(carrinho_perf, produtos_para_carrinho):
     # Questão 10:O tempo de resposta para adição de múltiplos produtos ao carrinho
 
@@ -58,7 +56,6 @@ def test_performance_adicao_multiplos_produtos_distintos(carrinho_perf, produtos
     assert duration_ms < TEMPO_LIMITE_CARRINHO_MS
     assert len(carrinho_perf) == NUM_ITENS_CARRINHO_PERF
 
-#Mede o tempo para adicionar múltiplas unidades do mesmo produto.
 def test_performance_adicao_multiplas_unidades_mesmo_produto(carrinho_perf, produtos_para_carrinho):
     # Questão 10:O tempo de resposta para adição de múltiplas unidades do mesmo produto ao carrinho
     produto_unico = produtos_para_carrinho[0]
@@ -84,7 +81,6 @@ def test_performance_adicao_multiplas_unidades_mesmo_produto(carrinho_perf, prod
 class TestPerformancePagamento(unittest.TestCase):
     def setUp(self):
         self.sistema = SistemaEcommerce()
-        # Corrigido: 'desc' para 'descricao', 'qtd' para 'quantidade_estoque', 'cat' para 'categoria'
         self.produto = Produto(id_produto=1001, nome="Perf Pagto Prod", descricao="", preco=10.0, quantidade_estoque=10, categoria="Perf")
         self.sistema.adicionar_produto(self.produto)
 
@@ -100,7 +96,7 @@ class TestPerformancePagamento(unittest.TestCase):
     @patch.object(SistemaPagamento, "_verificar_fraude", return_value=True)
     @patch.object(SistemaPagamento, "_autorizar_pagamento", return_value=True)
     def test_performance_processamento_pagamento(self, mock_autorizar, mock_fraude):
-        # Questão 10: O tempo de processamento de pagamento
+        # Questão 10: tempo de processamento de pagamento
         dados_pagamento = {"num_parcelas": 1, "dados_cartao": {}}
         start_time = time.perf_counter()
 
@@ -121,7 +117,6 @@ class TestPerformanceVolumePedidos(unittest.TestCase):
         self.sistema_volume = SistemaEcommerce()
         self.produtos_volume = []
         for i in range(NUM_PEDIDOS_VOLUME_PERF):
-            # Corrigido: 'desc' para 'descricao', 'qtd' para 'quantidade_estoque', 'cat' para 'categoria'
             p = Produto(id_produto=2000 + i, nome=f"Volume Prod {i}", descricao="",
                         preco=5.0, quantidade_estoque=2, categoria="Volume")
             self.produtos_volume.append(p)
@@ -133,7 +128,7 @@ class TestPerformanceVolumePedidos(unittest.TestCase):
     @patch.object(SistemaPagamento, "_verificar_fraude", return_value=True)
     @patch.object(SistemaPagamento, "_autorizar_pagamento", return_value=True)
     def test_performance_volume_pedidos_sequencial(self, mock_autorizar, mock_fraude):
-        #Questão 10: O comportamento do sistema com um grande volume de pedidos simultâneos 
+        #Questão 10: comportamento do sistema com um grande volume de pedidos simultâneos 
         tempos_pedidos = []
         start_total_time = time.perf_counter()
 

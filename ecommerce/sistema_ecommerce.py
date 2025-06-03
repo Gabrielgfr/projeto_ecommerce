@@ -8,29 +8,28 @@ from .pedido import Pedido, StatusPedido
 
 class SistemaEcommerce:
     def __init__(self, sistema_pagamento: Optional[SistemaPagamento] = None):
-        self.produtos: Dict[int, Produto] = {} # Inicializa o catálogo de produtos como um dicionário vazio
+        self.produtos: Dict[int, Produto] = {} # cria o catálogo de produtos como um dicionário vazio
         self.pedidos: Dict[str, Pedido] = {}
-        # Cria uma instância padrão de SistemaPagamento se nenhuma for fornecida
         self.sistema_pagamento = sistema_pagamento if sistema_pagamento else SistemaPagamento() 
         print("Sistema de E-commerce inicializado.")
 
     # --- Gerenciamento de Produtos ---
 
-    def adicionar_produto(self, produto: Produto): # Adiciona um produto ao catálogo
+    def adicionar_produto(self, produto: Produto): 
         if produto.id_produto in self.produtos: # Verifica se o produto já existe no catálogo
             raise ValueError(f"Produto com ID {produto.id_produto} já existe no catálogo.")
         self.produtos[produto.id_produto] = produto # Adiciona o produto ao dicionário de produtos
         print(f"Produto '{produto.nome}' (ID: {produto.id_produto}) adicionado ao catálogo.")
 
-    def buscar_produto_por_id(self, id_produto: int) -> Optional[Produto]: # Busca um produto pelo ID
+    def buscar_produto_por_id(self, id_produto: int) -> Optional[Produto]: 
         return self.produtos.get(id_produto)
 
-    def listar_produtos(self) -> List[Produto]: # Lista todos os produtos no catálogo
-        return list(self.produtos.values()) # Retorna uma lista dos produtos
+    def listar_produtos(self) -> List[Produto]: 
+        return list(self.produtos.values())
 
-    def buscar_produtos_por_nome(self, termo_busca: str) -> List[Produto]: # Busca produtos pelo nome
+    def buscar_produtos_por_nome(self, termo_busca: str) -> List[Produto]:
         termo_busca_lower = termo_busca.lower() 
-        return [p for p in self.produtos.values() if termo_busca_lower in p.nome.lower()] # Retorna uma lista de produtos que contêm o termo de busca no nome
+        return [p for p in self.produtos.values() if termo_busca_lower in p.nome.lower()] 
 
     # --- Gerenciamento de Pedidos ---
 
@@ -42,19 +41,19 @@ class SistemaEcommerce:
             print("Erro: Carrinho está vazio. Não é possível criar pedido.")
             return None
 
-        for produto, quantidade in itens_carrinho.items(): # Itera sobre os itens do carrinho
+        for produto, quantidade in itens_carrinho.items(): 
             produto_catalogo = self.buscar_produto_por_id(produto.id_produto) # Busca o produto no catálogo
             if not produto_catalogo: # Verifica se o produto existe no catálogo
                 print(f"Erro: Produto '{produto.nome}' (ID: {produto.id_produto}) não encontrado no catálogo.")
-                return None # Ou lançar exceção
+                return None 
             if not produto_catalogo.verificar_disponibilidade(quantidade): # Verifica se o produto está disponível em estoque
                 print(f"Erro: Estoque insuficiente para '{produto.nome}' (ID: {produto.id_produto}). Pedido: {quantidade}, Disponível: {produto_catalogo.quantidade_estoque}.")
-                return None # Ou lançar exceção
+                return None 
 
         # 2. Criar a instância do Pedido (se estoque OK)
         try:
             novo_pedido = Pedido(id_cliente, carrinho, endereco_entrega, metodo_pagamento)
-        except ValueError as e: # Se houver erro na criação do pedido (ex: dados inválidos)
+        except ValueError as e: # Se houver erro na criação do pedido, dados inválidos
             print(f"Erro ao instanciar Pedido: {e}")
             return None
 
@@ -62,14 +61,12 @@ class SistemaEcommerce:
         try:
             for produto, quantidade in itens_carrinho.items():
                 produto_catalogo = self.buscar_produto_por_id(produto.id_produto)
-                # A verificação de estoque já foi feita, mas é bom garantir
                 if produto_catalogo:
                     produto_catalogo.atualizar_estoque(-quantidade) # Remove do estoque
                     print(f"Estoque do produto '{produto_catalogo.nome}' atualizado para {produto_catalogo.quantidade_estoque}.")
                 else:
-                     # Isso não deveria acontecer devido à validação anterior
                      print(f"AVISO: Produto {produto.id_produto} não encontrado durante a baixa de estoque!")
-        except ValueError as e: # Se houver erro ao atualizar o estoque (ex: estoque negativo)
+        except ValueError as e: # Se houver erro ao atualizar o estoque, estoque negativo)
             print(f"Erro CRÍTICO ao atualizar estoque para o pedido {novo_pedido.id_pedido}: {e}") 
             return None
 
@@ -82,15 +79,15 @@ class SistemaEcommerce:
         return novo_pedido
 
     def buscar_pedido_por_id(self, id_pedido: str) -> Optional[Pedido]: 
-        return self.pedidos.get(id_pedido) # Busca um pedido pelo ID
+        return self.pedidos.get(id_pedido)
 
-    def listar_pedidos_por_cliente(self, id_cliente: str) -> List[Pedido]: # Listar pedidos de um cliente
-        return [p for p in self.pedidos.values() if p.id_cliente == id_cliente] # Retorna uma lista de pedidos que pertencem ao cliente especificado
+    def listar_pedidos_por_cliente(self, id_cliente: str) -> List[Pedido]: 
+        return [p for p in self.pedidos.values() if p.id_cliente == id_cliente] # lista de pedidos que pertencem ao cliente especificado
 
-    # --- Processamento de Pagamento --- (Delega para SistemaPagamento)
+    # --- Processamento de Pagamento --- 
 
     def processar_pagamento_pedido(self, id_pedido: str, dados_pagamento: Dict[str, Any]) -> bool: 
-        pedido = self.buscar_pedido_por_id(id_pedido) # Busca o pedido pelo ID
+        pedido = self.buscar_pedido_por_id(id_pedido) 
         if not pedido: # Verifica se o pedido existe
             print(f"Erro: Pedido com ID {id_pedido} não encontrado.")
             return False
@@ -100,8 +97,7 @@ class SistemaEcommerce:
             print(f"Erro: Pedido {id_pedido} não está pendente de pagamento (Status: {pedido.status.name}).")
 
         print(f"\n--- Processando pagamento para o pedido {id_pedido} via {pedido.metodo_pagamento} ---")
-        pedido.atualizar_status(StatusPedido.PROCESSANDO_PAGAMENTO) # Atualiza o status para PROCESSANDO_PAGAMENTO
-        # Inicializa variáveis para o resultado do pagamento
+        pedido.atualizar_status(StatusPedido.PROCESSANDO_PAGAMENTO)  
         sucesso = False
         mensagem = "Método de pagamento não suportado ou erro interno."
         id_transacao = None
@@ -113,30 +109,29 @@ class SistemaEcommerce:
             # Processa o pagamento de acordo com o método escolhido
             if pedido.metodo_pagamento == "Cartão de Crédito":
                 num_parcelas = dados_pagamento.get('num_parcelas', 1) 
-                dados_cartao = dados_pagamento.get('dados_cartao', {}) # Dados simulados
-                if not isinstance(num_parcelas, int) or num_parcelas < 1: # Verifica se o número de parcelas é válido
+                dados_cartao = dados_pagamento.get('dados_cartao', {}) 
+                if not isinstance(num_parcelas, int) or num_parcelas < 1: #número de parcelas é válido
                      raise ValueError("Número de parcelas inválido.")
 
                 sucesso, mensagem, valor_pago_final, valor_parcela_final = self.sistema_pagamento.processar_cartao_credito(
-                    float(pedido.valor_total), # Passa o valor total calculado no pedido (itens+frete)
+                    float(pedido.valor_total), #valor total calculado no pedido (itens+frete)
                     num_parcelas, 
                     dados_cartao
                 )
                 if sucesso:
-                    num_parcelas_final = num_parcelas # Simula o número de parcelas final
-                    id_transacao = f"cc_{str(uuid.uuid4())[:8]}" # Simula um ID de transação de cartão de crédito
+                    num_parcelas_final = num_parcelas 
+                    id_transacao = f"cc_{str(uuid.uuid4())[:8]}" #ID de transação de cartão de crédito
 
-            elif pedido.metodo_pagamento == "PIX": # Processa pagamento via PIX
+            elif pedido.metodo_pagamento == "PIX":
                 sucesso, mensagem, valor_pago_final = self.sistema_pagamento.processar_pix(
-                    float(pedido.valor_total) # Passa o valor total original para aplicar desconto
+                    float(pedido.valor_total) # valor total original para aplicar desconto
                 )
                 if sucesso:
-                    # Simular ID transação PIX
                     id_transacao = f"pix_{str(uuid.uuid4())[:8]}"
 
             else:
                 print(f"Erro: Método de pagamento '{pedido.metodo_pagamento}' não suportado.")
-                pedido.atualizar_status(StatusPedido.FALHA_PAGAMENTO) # Reverte para falha
+                pedido.atualizar_status(StatusPedido.FALHA_PAGAMENTO) 
                 return False
 
             # Registra o resultado do pagamento no pedido
@@ -145,7 +140,6 @@ class SistemaEcommerce:
 
         except Exception as e: # Captura qualquer exceção inesperada durante o processamento
             print(f"Erro inesperado durante o processamento do pagamento para o pedido {id_pedido}: {e}")
-            # Garante que o pedido vá para Falha em caso de exceção
             pedido.registrar_pagamento(False, None, Decimal('0.0'))
             sucesso = False
 
@@ -177,23 +171,18 @@ class SistemaEcommerce:
                         produto_catalogo.atualizar_estoque(quantidade) # Adiciona de volta ao estoque
                         print(f"Estoque do produto '{produto_catalogo.nome}' reabastecido para {produto_catalogo.quantidade_estoque}.")
                     else:
-                        # Indica uma inconsistência de dados
                         print(f"AVISO: Produto {produto_pedido.id_produto} do pedido cancelado não encontrado no catálogo para reabastecimento!")
-                # Se o pedido estava pago, processar o reembolso
                 if pedido.data_pagamento and pedido.id_transacao_pagamento: 
                     print(f"Atenção: Pedido {id_pedido} estava pago. É necessário processar o reembolso para a transação {pedido.id_transacao_pagamento}.") 
                 return True
             except ValueError as e:
-                # Erro ao reabastecer o estoque
                 print(f"Erro CRÍTICO ao reabastecer estoque para o pedido cancelado {id_pedido}: {e}")
-                # Atualiza o status do pedido para FALHA_PAGAMENTO
-                return False # Indica que houve problema no processo completo
+                return False 
         else:
-            # Falha ao atualizar o status do pedido para CANCELADO
             print(f"Falha ao atualizar status para CANCELADO para o pedido {id_pedido}.")
             return False
 
-    # --- Outras Funcionalidades (Exemplos) ---
+    # --- Outras Funcionalidades  ---
 
     def gerar_relatorio_vendas(self) -> str: 
         relatorio = "--- Relatório de Vendas ---\n"
@@ -210,7 +199,6 @@ class SistemaEcommerce:
         relatorio += "--------------------------\n"
         return relatorio 
 
-# Exemplo de uso
 if __name__ == '__main__':
     # 1. Inicializa o sistema
     sistema = SistemaEcommerce()
@@ -248,19 +236,18 @@ if __name__ == '__main__':
             print(f"\nPedido {pedido1.id_pedido} criado. Status: {pedido1.status.name}")
 
             # 5. Processa o pagamento do pedido
-            dados_pgto_cc = {'num_parcelas': 3, 'dados_cartao': {'numero': '**** **** **** 1111'}} # Dados simulados
+            dados_pgto_cc = {'num_parcelas': 3, 'dados_cartao': {'numero': '**** **** **** 1111'}} 
             pagamento_ok = sistema.processar_pagamento_pedido(pedido1.id_pedido, dados_pgto_cc)
 
             if pagamento_ok:
                 print(f"Pagamento do pedido {pedido1.id_pedido} realizado com sucesso.")
-                # Simula o fluxo posterior
                 pedido1.atualizar_status(StatusPedido.EM_SEPARACAO) 
                 pedido1.atualizar_status(StatusPedido.ENVIADO)
                 pedido1.atualizar_status(StatusPedido.ENTREGUE)
             else:
                 print(f"Falha no pagamento do pedido {pedido1.id_pedido}.")
 
-    # 6. Simula outro cliente comprando com PIX e cancelando
+    # 6. Simula cliente comprando com PIX e cancelando
     carrinho_cliente2 = Carrinho()
     produto_escolhido3 = sistema.buscar_produto_por_id(2)
     if produto_escolhido3:

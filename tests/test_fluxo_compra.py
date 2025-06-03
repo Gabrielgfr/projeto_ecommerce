@@ -1,8 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from decimal import Decimal
-
-# Ajusta o path para encontrar o módulo ecommerce
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -17,12 +15,6 @@ from ecommerce.sistema_pagamento import SistemaPagamento
 class TestFluxoCompraCompleto(unittest.TestCase):
     #Da adição ao carrinho até o pagamento.
     def setUp(self):
-        """Configura o ambiente para cada teste (fixture).
-
-        Inicializa SistemaEcommerce e adiciona produtos.
-        """
-        # Criar uma instância real do SistemaEcommerce
-        # O SistemaPagamento interno será mockado nos testes que precisam
         self.sistema = SistemaEcommerce()
 
         # Adicionar produtos reais ao sistema
@@ -44,10 +36,8 @@ class TestFluxoCompraCompleto(unittest.TestCase):
                   "_autorizar_pagamento", 
                   return_value=True) # Mock para sempre autorizar o pagamento
     def test_fluxo_completo_pix(self, mock_autorizar, mock_fraude):
-        """Testa o fluxo completo com pagamento via PIX.
-
-        Questão 8: Fluxo completo com pagamento via PIX
-        """
+        #Questão 8: Fluxo completo com pagamento via PIX
+        
         # 1. Adicionar produto ao carrinho
         carrinho = Carrinho()
         carrinho.adicionar_item(self.produto_pix, 1)
@@ -61,28 +51,24 @@ class TestFluxoCompraCompleto(unittest.TestCase):
         self.assertIsNotNone(pedido)
         id_pedido = pedido.id_pedido
         self.assertEqual(pedido.status, StatusPedido.PENDENTE)
-        # Valor total inicial = 200.00 (produto) + 10.00 (frete) = 210.00
-        self.assertAlmostEqual(pedido.valor_total, Decimal("210.00"))
+        self.assertAlmostEqual(pedido.valor_total, Decimal("210.00")) # 200.00 (produto) + 10.00 (frete) = 210.00
 
-        # 3. Processar pagamento PIX (mocks garantirão sucesso)
+        # 3. Processar pagamento PIX 
         dados_pagamento = {}
         resultado_pagamento = self.sistema.processar_pagamento_pedido(id_pedido, dados_pagamento)
 
         # 4. Verificar resultado
         self.assertTrue(resultado_pagamento)
-        mock_fraude.assert_called_once() # Verifica se mock foi chamado
-        mock_autorizar.assert_called_once() # Verifica se mock foi chamado
+        mock_fraude.assert_called_once() 
+        mock_autorizar.assert_called_once() #se mock foi chamado
 
         pedido_pago = self.sistema.buscar_pedido_por_id(id_pedido)
         self.assertIsNotNone(pedido_pago)
         self.assertEqual(pedido_pago.status, StatusPedido.PAGO)
         self.assertIsNotNone(pedido_pago.data_pagamento)
-        self.assertIsNotNone(pedido_pago.id_transacao_pagamento) # ID simulado deve ter sido gerado
-        # Verifica se o valor total foi atualizado com o desconto PIX (padrão 5%)
-        # Valor com desconto = 210.00 * (1 - 0.05) = 210.00 * 0.95 = 199.50
-        self.assertAlmostEqual(pedido_pago.valor_total, Decimal("199.50"))
+        self.assertIsNotNone(pedido_pago.id_transacao_pagamento)
+        self.assertAlmostEqual(pedido_pago.valor_total, Decimal("199.50"))  # desconto = 210.00 * (1 - 0.05) = 210.00 * 0.95 = 199.50
 
-        #  Verificar transições posteriores
         self.assertTrue(pedido_pago.atualizar_status(StatusPedido.EM_SEPARACAO))
         self.assertTrue(pedido_pago.atualizar_status(StatusPedido.ENVIADO))
         self.assertTrue(pedido_pago.atualizar_status(StatusPedido.ENTREGUE))
@@ -90,10 +76,8 @@ class TestFluxoCompraCompleto(unittest.TestCase):
     @patch.object(SistemaPagamento, "_verificar_fraude", return_value=True)
     @patch.object(SistemaPagamento, "_autorizar_pagamento", return_value=True)
     def test_fluxo_completo_cartao_vista(self, mock_autorizar, mock_fraude):
-        """Testa o fluxo completo com pagamento via cartão de crédito à vista.
-
-        Questão 8: Fluxo completo com pagamento via cartão de crédito à vista
-        """
+        #Questão 8: Fluxo completo com pagamento via cartão de crédito à vista
+        
         # 1. Adicionar produto ao carrinho
         carrinho = Carrinho()
         carrinho.adicionar_item(self.produto_cc_vista, 2) # 2 * 150.0 = 300.0
@@ -106,10 +90,10 @@ class TestFluxoCompraCompleto(unittest.TestCase):
         self.assertIsNotNone(pedido)
         id_pedido = pedido.id_pedido
         self.assertEqual(pedido.status, StatusPedido.PENDENTE)
-        # Valor total inicial = 300.00 (produto) + 20.00 (frete) = 320.00
-        self.assertAlmostEqual(pedido.valor_total, Decimal("320.00"))
+        
+        self.assertAlmostEqual(pedido.valor_total, Decimal("320.00")) # = 300.00 (produto) + 20.00 (frete) = 320.00
 
-        # 3. Processar pagamento Cartão à Vista (mocks garantirão sucesso)
+        # 3. Processar pagamento Cartão à Vista 
         dados_pagamento = {"num_parcelas": 1, "dados_cartao": {}}
         resultado_pagamento = self.sistema.processar_pagamento_pedido(id_pedido, dados_pagamento)
 
@@ -123,7 +107,6 @@ class TestFluxoCompraCompleto(unittest.TestCase):
         self.assertEqual(pedido_pago.status, StatusPedido.PAGO)
         self.assertIsNotNone(pedido_pago.data_pagamento)
         self.assertIsNotNone(pedido_pago.id_transacao_pagamento)
-        # Valor total não deve mudar para CC à vista (sem juros/desconto padrão)
         self.assertAlmostEqual(pedido_pago.valor_total, Decimal("320.00"))
         self.assertEqual(pedido_pago.num_parcelas, 1)
         self.assertIsNone(pedido_pago.valor_parcela) # Valor da parcela é None para 1x
@@ -131,10 +114,8 @@ class TestFluxoCompraCompleto(unittest.TestCase):
     @patch.object(SistemaPagamento, "_verificar_fraude", return_value=True)
     @patch.object(SistemaPagamento, "_autorizar_pagamento", return_value=True)
     def test_fluxo_completo_cartao_parcelado(self, mock_autorizar, mock_fraude):
-        """Testa o fluxo completo com pagamento via cartão de crédito parcelado.
-
-        Questão 8: Fluxo completo com pagamento via cartão de crédito parcelado
-        """
+        #Questão 8: Fluxo completo com pagamento via cartão de crédito parcelado
+        
         # 1. Adicionar produto ao carrinho
         carrinho = Carrinho()
         carrinho.adicionar_item(self.produto_cc_parc, 1) # 1 * 500.0 = 500.0
@@ -147,10 +128,10 @@ class TestFluxoCompraCompleto(unittest.TestCase):
         self.assertIsNotNone(pedido)
         id_pedido = pedido.id_pedido
         self.assertEqual(pedido.status, StatusPedido.PENDENTE)
-        # Valor total inicial = 500.00 (produto) + 25.00 (frete) = 525.00
-        self.assertAlmostEqual(pedido.valor_total, Decimal("525.00"))
+        # Valor total inicial 
+        self.assertAlmostEqual(pedido.valor_total, Decimal("525.00")) # = 500.00 (produto) + 25.00 (frete) = 525.00
 
-        # 3. Processar pagamento Cartão Parcelado (mocks garantirão sucesso)
+        # 3. Processar pagamento Cartão Parcelado
         num_parcelas = 3
         dados_pagamento = {"num_parcelas": num_parcelas, "dados_cartao": {}}
         resultado_pagamento = self.sistema.processar_pagamento_pedido(id_pedido, dados_pagamento)
@@ -166,18 +147,13 @@ class TestFluxoCompraCompleto(unittest.TestCase):
         self.assertIsNotNone(pedido_pago.data_pagamento)
         self.assertIsNotNone(pedido_pago.id_transacao_pagamento)
         self.assertEqual(pedido_pago.num_parcelas, num_parcelas)
-        self.assertIsNotNone(pedido_pago.valor_parcela)
-
-        # Verifica se o valor total foi atualizado com juros (padrão 2%)
-        # Valor base para cálculo de juros = 525.00
-        # Parcela(3x, 2%) = 525 * [(1.02)^3 * 0.02] / [(1.02)^3 - 1] ~= 182.05
-        # Valor total pago = 182.05 * 3 = 546.15
-        valor_parcela_esperado = Decimal("182.05")
-        valor_total_pago_esperado = Decimal("546.15")
+        self.assertIsNotNone(pedido_pago.valor_parcela) 
+        
+        valor_parcela_esperado = Decimal("182.05") # Parcela(3x, juros 2%) 
+        valor_total_pago_esperado = Decimal("546.15") # 182.05 * 3 = 546.15
         self.assertAlmostEqual(pedido_pago.valor_parcela, valor_parcela_esperado, places=2)
         self.assertAlmostEqual(pedido_pago.valor_total, valor_total_pago_esperado, places=2)
 
-# Permite executar os testes diretamente pelo script
 if __name__ == '__main__':
     unittest.main()
 

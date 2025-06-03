@@ -11,11 +11,11 @@ class StatusPedido(Enum):
     PENDENTE = auto()       # Pedido criado, aguardando pagamento
     PROCESSANDO_PAGAMENTO = auto() # Pagamento em andamento
     PAGO = auto()           # Pagamento confirmado
-    EM_SEPARACAO = auto()   # Produtos sendo separados no estoque
-    ENVIADO = auto()        # Pedido despachado para entrega
-    ENTREGUE = auto()       # Pedido recebido pelo cliente
-    CANCELADO = auto()      # Pedido cancelado
-    FALHA_PAGAMENTO = auto() # Pagamento falhou
+    EM_SEPARACAO = auto()   
+    ENVIADO = auto()        
+    ENTREGUE = auto()       
+    CANCELADO = auto()      
+    FALHA_PAGAMENTO = auto() 
 
 
 class Pedido: 
@@ -28,8 +28,8 @@ class Pedido:
         StatusPedido.PAGO: [StatusPedido.EM_SEPARACAO, StatusPedido.CANCELADO], # Cancelamento pós-pagamento pode exigir reembolso
         StatusPedido.EM_SEPARACAO: [StatusPedido.ENVIADO, StatusPedido.CANCELADO],
         StatusPedido.ENVIADO: [StatusPedido.ENTREGUE, StatusPedido.CANCELADO], # Cancelar após envio é complexo (devolução)
-        StatusPedido.ENTREGUE: [], # Estado final (exceto devoluções, não modeladas aqui)
-        StatusPedido.CANCELADO: []  # Estado final
+        StatusPedido.ENTREGUE: [],
+        StatusPedido.CANCELADO: []  
     }
 
     # Inicializa um novo pedido com os detalhes fornecidos.
@@ -39,7 +39,6 @@ class Pedido:
         if not carrinho.obter_itens():
             raise ValueError("Não é possível criar um pedido com um carrinho vazio.")
 
-        # Atributos básicos do pedido
         self.id_pedido = str(uuid.uuid4()) # Gera um ID único para o pedido
         self.id_cliente = id_cliente 
 
@@ -48,9 +47,9 @@ class Pedido:
         self.endereco_entrega = endereco_entrega # Armazena o endereço de entrega
         self.metodo_pagamento = metodo_pagamento 
 
-        # Cálculos iniciais (frete e total)
-        self.valor_frete = self.calcular_frete() # Calcula o frete
-        self.valor_total = Decimal(str(carrinho.calcular_total())) + self.valor_frete # Total = itens + frete
+        # Cálculos 
+        self.valor_frete = self.calcular_frete() #frete
+        self.valor_total = Decimal(str(carrinho.calcular_total())) + self.valor_frete #Total = itens + frete
 
         # Status inicial e datas
         self.status = StatusPedido.PENDENTE # Status inicial do pedido
@@ -80,14 +79,13 @@ class Pedido:
                 self.data_envio = now
             elif novo_status == StatusPedido.ENTREGUE and not self.data_entrega:
                 self.data_entrega = now
-            # Adicionar lógica para CANCELADO se necessário (ex: log, reembolso)
             elif novo_status == StatusPedido.CANCELADO:
                 print(f"Pedido {self.id_pedido} foi cancelado.")
         
             return True
         else:
             print(f"Erro: Transição de status inválida de {self.status.name} para {novo_status.name} no pedido {self.id_pedido}.")
-            return False # Retorna False se a transição não for permitida
+            return False 
         
     # Registra o resultado do processamento do pagamento
     def registrar_pagamento(self, sucesso: bool, id_transacao: str | None, valor_pago: Decimal, num_parcelas: int | None = None, valor_parcela: Decimal | None = None):
@@ -95,19 +93,19 @@ class Pedido:
         if self.status not in [StatusPedido.PENDENTE, StatusPedido.PROCESSANDO_PAGAMENTO, StatusPedido.FALHA_PAGAMENTO]: # Verifica se o status permite registrar pagamento
             print(f"Aviso: Tentativa de registrar pagamento para pedido {self.id_pedido} com status {self.status.name}.") # verifica se o status é válido
             
-        if sucesso: # Se o pagamento foi bem-sucedido qtualiza os detalhes do pagamento
+        if sucesso: 
             self.id_transacao_pagamento = id_transacao
             self.valor_total = valor_pago # Atualiza o valor total com o valor efetivamente pago
             self.num_parcelas = num_parcelas
             self.valor_parcela = valor_parcela
             self.atualizar_status(StatusPedido.PAGO)
-        else: # Se o pagamento falhou, atualiza o status
+        else:
             self.atualizar_status(StatusPedido.FALHA_PAGAMENTO)
             print(f"Falha ao registrar pagamento para o pedido {self.id_pedido}. ID da tentativa: {id_transacao}")
 
     def calcular_frete(self) -> Decimal: # Calcula o valor do frete com base no número de itens
-        num_itens_total = sum(self.itens.values()) # Soma as quantidades de todos os itens
-        if num_itens_total == 0: # Se não houver itens, o frete é zero
+        num_itens_total = sum(self.itens.values()) #quantidades de todos os itens
+        if num_itens_total == 0: #sem itens, o frete é zero
              return Decimal("0.00")
         
         frete = Decimal(str(num_itens_total)) * Decimal("5.00") 
@@ -121,7 +119,7 @@ class Pedido:
         if self.status not in [StatusPedido.PAGO, StatusPedido.EM_SEPARACAO, StatusPedido.ENVIADO, StatusPedido.ENTREGUE]: # Verifica se o status permite gerar nota fiscal
             raise ValueError(f"Não é possível gerar nota fiscal para o pedido {self.id_pedido} com status {self.status.name}.") # verifica se o status é válido
 
-        # Formatação da nota fiscal
+        # Nota fiscal com detalhes do pedido
         nf = f"--- Nota Fiscal ---\n"
         nf += f"Pedido ID: {self.id_pedido}\n"
         nf += f"Cliente ID: {self.id_cliente}\n"
@@ -149,14 +147,14 @@ class Pedido:
         return nf
 
     def obter_detalhes(self) -> Dict[str, Any]:
-        #Retorna um dicionário com os detalhes completos do pedido.
+        #dicionário com os detalhes completos do pedido.
         return {
             "id_pedido": self.id_pedido,
             "id_cliente": self.id_cliente,
             "itens": {p.nome: q for p, q in self.itens.items()}, # Simplifica itens para exibição
             "endereco_entrega": self.endereco_entrega,
             "metodo_pagamento": self.metodo_pagamento,
-            "valor_total": float(self.valor_total), # Converte Decimal para float para JSON/API
+            "valor_total": float(self.valor_total), 
             "valor_frete": float(self.valor_frete),
             "status": self.status.name,
             "data_criacao": self.data_criacao.isoformat(),
@@ -168,15 +166,14 @@ class Pedido:
             "valor_parcela": float(self.valor_parcela) if self.valor_parcela else None
         }
 
-    def __str__(self) -> str: # Retorna uma string formatada com os detalhes do pedido.
+    def __str__(self) -> str: #string formatada com os detalhes do pedido.
         return f"Pedido(ID: {self.id_pedido}, Status: {self.status.name}, Total: R$ {self.valor_total:.2f})" # Formata a string de exibição do pedido
 
-    def __repr__(self) -> str: # Retorna uma representação mais detalhada do pedido.
+    def __repr__(self) -> str: 
         return f"<Pedido {self.id_pedido} - Status: {self.status.name}>"
 
-# Exemplo 
+# Exemplo de produtos 
 if __name__ == '__main__':
-    # Cria produtos de exemplo
     prod1 = Produto(1, "Laptop Gamer", "Notebook com RTX 4090", 15000.00, 10, "Eletrônicos")
     prod2 = Produto(2, "Mouse Sem Fio", "Mouse ergonômico", 150.00, 50, "Acessórios")
 
@@ -191,7 +188,7 @@ if __name__ == '__main__':
     print("\n--- Carrinho --- ")
     print(carrinho_exemplo)
 
-    # Define endereço e cliente
+    # Cria o endereço e o  cliente
     endereco = {"rua": "Rua Exemplo", "numero": "123", "cidade": "Cidade Teste", "cep": "12345-678"}
     cliente_id = "cliente_abc"
 
@@ -202,12 +199,11 @@ if __name__ == '__main__':
         print(pedido_exemplo)
         print(f"Valor inicial do pedido (itens + frete): R$ {pedido_exemplo.valor_total:.2f}")
 
-        # Simula registro de pagamento (sucesso)
+        # pagamento (sucesso)
         print("\n--- Registrando Pagamento (Sucesso) --- ")
         pedido_exemplo.registrar_pagamento(True, "transacao_12345", Decimal("15310.00"), 3, Decimal("5103.33")) # Valor pode incluir juros
         print(pedido_exemplo)
 
-        # Tenta atualizar status
         print("\n--- Atualizando Status --- ")
         pedido_exemplo.atualizar_status(StatusPedido.EM_SEPARACAO)
         pedido_exemplo.atualizar_status(StatusPedido.ENVIADO)
@@ -222,11 +218,9 @@ if __name__ == '__main__':
         except ValueError as e:
             print(f"Erro ao gerar nota: {e}")
 
-        # Tenta uma transição inválida
         print("\n--- Tentando Transição Inválida --- ")
         pedido_exemplo.atualizar_status(StatusPedido.PENDENTE) # Inválido a partir de ENTREGUE
-
-        # Obtém detalhes
+        
         print("\n--- Detalhes do Pedido --- ")
         detalhes = pedido_exemplo.obter_detalhes()
         import json

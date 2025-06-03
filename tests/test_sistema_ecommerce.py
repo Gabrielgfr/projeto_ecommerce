@@ -1,7 +1,5 @@
 import unittest
 from decimal import Decimal
-
-# Ajusta o path para encontrar o módulo ecommerce
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -14,8 +12,6 @@ from ecommerce.pedido import Pedido, StatusPedido
 from ecommerce.sistema_ecommerce import SistemaEcommerce
 
 class SistemaEcommerceTest(unittest.TestCase):
-    """Testa a classe principal SistemaEcommerce."""
-
     def setUp(self):
         """Inicializa o sistema e adiciona produtos."""
         self.sistema = SistemaEcommerce()
@@ -31,10 +27,8 @@ class SistemaEcommerceTest(unittest.TestCase):
         self.endereco = {"rua": "Rua Sistema", "cep": "66666-000"}
 
     def test_adicao_e_recuperacao_produtos(self):
-        """Verifica se produtos são adicionados e recuperados corretamente.
-
-        Questão 6: Adição e recuperação de produtos
-        """
+        #Questão 6: Adição e recuperação de produtos
+        
         p1 = self.sistema.buscar_produto_por_id(601)
         p2 = self.sistema.buscar_produto_por_id(602)
         p3 = self.sistema.buscar_produto_por_id(603)
@@ -62,10 +56,8 @@ class SistemaEcommerceTest(unittest.TestCase):
         self.assertEqual(len(busca2), 3)
 
     def test_criacao_pedido_sucesso(self):
-        """Verifica a criação bem-sucedida de um pedido.
-
-        Questão 6: Criação de pedidos
-        """
+        #Questão 6: Criação de pedidos
+        
         carrinho = Carrinho()
         carrinho.adicionar_item(self.produto1, 2)
         carrinho.adicionar_item(self.produto2, 1)
@@ -89,10 +81,8 @@ class SistemaEcommerceTest(unittest.TestCase):
         self.assertEqual(len(carrinho), 0)
 
     def test_criacao_pedido_falha_estoque_insuficiente(self):
-        """Verifica se a criação do pedido falha se um item não tiver estoque.
-
-        Questão 6: Criação de pedidos (falha por estoque)
-        """
+        #Questão 6: Criação de pedidos com falhas por estoque
+        
         carrinho = Carrinho()
         carrinho.adicionar_item(self.produto1, 1)
 
@@ -111,10 +101,8 @@ class SistemaEcommerceTest(unittest.TestCase):
         self.produto2.quantidade_estoque = estoque_original
 
     def test_processamento_pagamento(self):
-        """Verifica a integração do processamento de pagamento.
-
-        Questão 6: Processamento de pagamentos
-        """
+        #Questão 6: Processamento de pagamentos
+        
         carrinho = Carrinho()
         carrinho.adicionar_item(self.produto1, 1)
         pedido = self.sistema.criar_pedido(self.id_cliente, carrinho, self.endereco, "Cartão de Crédito")
@@ -130,10 +118,8 @@ class SistemaEcommerceTest(unittest.TestCase):
         self.assertIn(pedido_atualizado.status, [StatusPedido.PAGO, StatusPedido.FALHA_PAGAMENTO])
 
     def test_cancelamento_pedido_pendente_reabastece_estoque(self):
-        """Verifica o cancelamento de um pedido pendente e o reabastecimento.
-
-        Questão 6: Cancelamento de pedidos e reabastecimento do estoque
-        """
+        #Questão 6: Cancelamento de pedidos e reabastecimento do estoque
+        
         carrinho = Carrinho()
         carrinho.adicionar_item(self.produto1, 3)
         carrinho.adicionar_item(self.produto2, 2)

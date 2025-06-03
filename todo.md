@@ -1,5 +1,3 @@
-# Lista de Tarefas - Sistema de E-commerce e Testes
-
 ## Implementação das Classes (Clean Code & SOLID)
 
 - [X] Implementar a classe `Produto` (id, nome, descrição, preço, estoque, categoria, verificar_disponibilidade, atualizar_estoque, obter_informacoes)

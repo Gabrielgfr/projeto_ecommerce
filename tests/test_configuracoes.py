@@ -1,7 +1,5 @@
 import unittest
 from decimal import Decimal, ROUND_HALF_UP
-
-# Ajusta o path para encontrar o módulo ecommerce
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -10,10 +8,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from ecommerce.sistema_pagamento import SistemaPagamento
 
 class ConfiguracaoSistemaPagamentoTest(unittest.TestCase):
-    """Testa o SistemaPagamento com diferentes configurações (taxas, parcelas)."""
-
+    
     def setUp(self):
-        """Valores base para os testes."""
+        """Valor base para os testes."""
         self.valor_base = Decimal("1000.00")
 
     def _testar_parcelamento_com_taxa(self, taxa_juros_percent: float, num_parcelas: int, valor_esperado_parcela: Decimal, valor_total_esperado: Decimal):
@@ -32,19 +29,14 @@ class ConfiguracaoSistemaPagamentoTest(unittest.TestCase):
                             msg=f"Taxa {taxa_juros_percent}%, {num_parcelas}x - Total incorreto")
 
     def test_parcelamento_diferentes_taxas_juros_e_parcelas(self):
-        """Verifica o cálculo de parcelas com diferentes taxas e números de parcelas.
-
-        Questão 9: Diferentes taxas de juros para parcelamento
-        Questão 9: Diferentes quantidades de parcelas
-        """
-        # Cenários [ (taxa_juros, num_parcelas, parcela_esperada, total_esperado) ]
+        #Questão 9: Diferentes taxas de juros para parcelamento
+        #Questão 9: Diferentes quantidades de parcelas
         cenarios = [
-            # Taxa 1.0% - Valores corrigidos
+            # Taxa 1.0%
             (1.0, 3, Decimal("340.02"), Decimal("1020.06")), 
             (1.0, 6, Decimal("172.55"), Decimal("1035.30")), 
-            # Taxa 2.5% - Valores ajustados conforme output real do cálculo
+            # Taxa 2.5% 
             (2.5, 3, Decimal("350.14"), Decimal("1050.42")), 
-            # Ajustado para o que o seu cálculo real produz
             (2.5, 12, Decimal("97.49"), Decimal("1169.88")), 
             # Taxa 0% (Sem Juros)
             (0.0, 4, Decimal("250.00"), Decimal("1000.00")),
@@ -68,10 +60,8 @@ class ConfiguracaoSistemaPagamentoTest(unittest.TestCase):
                             msg=f"Desconto {percentual_desconto}% - Valor final incorreto")
 
     def test_pix_diferentes_percentuais_desconto(self):
-        """Verifica o cálculo do valor final PIX com diferentes descontos.
-
-        Questão 9: Diferentes percentuais de desconto para pagamento via PIX
-        """
+        #Questão 9: Diferentes percentuais de desconto para pagamento via PIX
+    
         cenarios = [
             (0.0, Decimal("1000.00")),  # Sem desconto
             (5.0, Decimal("950.00")),   # 5% de desconto
@@ -83,6 +73,5 @@ class ConfiguracaoSistemaPagamentoTest(unittest.TestCase):
         for desconto, valor_esp in cenarios:
             self._testar_pix_com_desconto(desconto, valor_esp)
 
-# Executar testes
 if __name__ == "__main__":
     unittest.main()

@@ -14,14 +14,8 @@ from ecommerce.carrinho import Carrinho
 from ecommerce.pedido import Pedido, StatusPedido
 
 class TestPedido(unittest.TestCase):
-    """Classe de teste para a classe Pedido usando unittest."""
-
     def setUp(self):
-        """Configura o ambiente para cada teste.
-
-        Cria um mock de Carrinho com itens e outros dados necessários.
-        """
-        # Mock Produto (não precisamos da lógica interna do produto aqui)
+        # Mock Produto 
         self.produto1 = MagicMock(spec=Produto)
         self.produto1.id_produto = 301
         self.produto1.nome = "Produto Mock A"
@@ -34,27 +28,26 @@ class TestPedido(unittest.TestCase):
 
         # Mock Carrinho
         self.mock_carrinho = MagicMock(spec=Carrinho)
-        # Simula o retorno de obter_itens() e calcular_total()
         self.mock_carrinho.obter_itens.return_value = {self.produto1: 1, self.produto2: 2}
         # Total = 1 * 100.00 + 2 * 50.50 = 100.00 + 101.00 = 201.00
         self.mock_carrinho.calcular_total.return_value = Decimal("201.00")
 
-        # Dados comuns para criar um pedido
+        # Dados para criar um pedido
         self.id_cliente = "cliente_teste_pedido"
         self.endereco = {"rua": "Rua Teste Pedido", "cep": "11111-000"}
         self.metodo_pagamento_cc = "Cartão de Crédito"
         self.metodo_pagamento_pix = "PIX"
 
-        # Cria uma instância de Pedido para testes de transição
-        # Usamos patch para simular o cálculo de frete e evitar dependência externa
+        # Mock método de pagamento
+        # patch para simular o cálculo de frete e evitar dependência externa
         with patch("ecommerce.pedido.Pedido.calcular_frete", return_value=Decimal("15.00")):
             self.pedido = Pedido(self.id_cliente, self.mock_carrinho, self.endereco, self.metodo_pagamento_cc)
 
-        # Valor total esperado inicial = 201.00 (itens) + 15.00 (frete) = 216.00
+        #  201.00 (itens) + 15.00 (frete) = 216.00
         self.valor_total_inicial_esperado = Decimal("216.00")
 
     def test_criacao_pedido(self):
-        """Verifica se o pedido é criado com o status e valores iniciais corretos."""
+        # Verifica se o pedido é criado corretamente com os dados iniciais.
         self.assertEqual(self.pedido.id_cliente, self.id_cliente)
         self.assertEqual(self.pedido.status, StatusPedido.PENDENTE)
         self.assertEqual(len(self.pedido.itens), 2)
@@ -72,16 +65,13 @@ class TestPedido(unittest.TestCase):
         self.assertIsNone(self.pedido.id_transacao_pagamento)
 
     def test_transicao_status_valida_fluxo_sucesso(self):
-        """Verifica as transições de status válidas no fluxo de sucesso.
-
-        Questão 5: A transição correta entre os diferentes estados do pedido
-        """
+        #Questão 5: A transição correta entre os diferentes estados do pedido
+        
         # PENDENTE -> PROCESSANDO_PAGAMENTO
         self.assertTrue(self.pedido.atualizar_status(StatusPedido.PROCESSANDO_PAGAMENTO))
         self.assertEqual(self.pedido.status, StatusPedido.PROCESSANDO_PAGAMENTO)
 
-        # PROCESSANDO_PAGAMENTO -> PAGO (Simulado via registrar_pagamento)
-        # Precisamos chamar registrar_pagamento para ir para PAGO
+        # PROCESSANDO_PAGAMENTO -> PAGO ( via registrar_pagamento)
         self.pedido.registrar_pagamento(sucesso=True, id_transacao="trans_123", valor_pago=self.valor_total_inicial_esperado)
         self.assertEqual(self.pedido.status, StatusPedido.PAGO)
         self.assertIsNotNone(self.pedido.data_pagamento)
@@ -102,33 +92,29 @@ class TestPedido(unittest.TestCase):
         self.assertIsNotNone(self.pedido.data_entrega)
 
     def test_transicao_status_valida_fluxo_falha_pagamento(self):
-        """Verifica as transições de status válidas no fluxo de falha de pagamento.
-
-        Questão 5: A transição correta entre os diferentes estados do pedido
-        """
+        #Questão 5: A transição correta entre os diferentes estados do pedido
+        
         # PENDENTE -> PROCESSANDO_PAGAMENTO
         self.assertTrue(self.pedido.atualizar_status(StatusPedido.PROCESSANDO_PAGAMENTO))
         self.assertEqual(self.pedido.status, StatusPedido.PROCESSANDO_PAGAMENTO)
 
-        # PROCESSANDO_PAGAMENTO -> FALHA_PAGAMENTO (Simulado via registrar_pagamento)
+        # PROCESSANDO_PAGAMENTO -> FALHA_PAGAMENTO 
         self.pedido.registrar_pagamento(sucesso=False, id_transacao="trans_fail", valor_pago=Decimal("0.0"))
         self.assertEqual(self.pedido.status, StatusPedido.FALHA_PAGAMENTO)
         self.assertIsNone(self.pedido.data_pagamento)
-        self.assertIsNone(self.pedido.id_transacao_pagamento) # Não deve registrar ID em falha
+        self.assertIsNone(self.pedido.id_transacao_pagamento) 
 
-        # FALHA_PAGAMENTO -> PROCESSANDO_PAGAMENTO (Retentativa)
+        # FALHA_PAGAMENTO -> PROCESSANDO_PAGAMENTO
         self.assertTrue(self.pedido.atualizar_status(StatusPedido.PROCESSANDO_PAGAMENTO))
         self.assertEqual(self.pedido.status, StatusPedido.PROCESSANDO_PAGAMENTO)
 
-        # PROCESSANDO_PAGAMENTO -> PAGO (Agora com sucesso)
+        # PROCESSANDO_PAGAMENTO -> PAGO 
         self.pedido.registrar_pagamento(sucesso=True, id_transacao="trans_ok_retry", valor_pago=self.valor_total_inicial_esperado)
         self.assertEqual(self.pedido.status, StatusPedido.PAGO)
 
-    def test_transicao_status_valida_fluxo_cancelamento(self):
-        """Verifica as transições de status válidas envolvendo cancelamento.
-
-        Questão 5: A transição correta entre os diferentes estados do pedido
-        """
+    def test_transicao_status_valida_fluxo_cancelamento(self):     
+        #Questão 5: A transição correta entre os diferentes estados do pedido
+        
         # PENDENTE -> CANCELADO
         pedido_pendente = Pedido(self.id_cliente, self.mock_carrinho, self.endereco, self.metodo_pagamento_pix)
         self.assertTrue(pedido_pendente.atualizar_status(StatusPedido.CANCELADO))
@@ -140,7 +126,7 @@ class TestPedido(unittest.TestCase):
         self.assertTrue(pedido_processando.atualizar_status(StatusPedido.CANCELADO))
         self.assertEqual(pedido_processando.status, StatusPedido.CANCELADO)
 
-        # PAGO -> CANCELADO (Pode exigir reembolso, mas a transição é permitida)
+        # PAGO -> CANCELADO 
         pedido_pago = Pedido(self.id_cliente, self.mock_carrinho, self.endereco, self.metodo_pagamento_pix)
         pedido_pago.atualizar_status(StatusPedido.PROCESSANDO_PAGAMENTO)
         pedido_pago.registrar_pagamento(True, "trans_cancel", Decimal("216.00"))
@@ -148,10 +134,8 @@ class TestPedido(unittest.TestCase):
         self.assertEqual(pedido_pago.status, StatusPedido.CANCELADO)
 
     def test_transicao_status_invalida(self):
-        """Verifica se transições de status inválidas são bloqueadas.
-
-        Questão 5: As restrições de transição de estado (ex: não pode ir de pendente para entregue)
-        """
+        #Questão 5: As restrições de transição de estado (ex: não pode ir de pendente para entregue)
+        
         # PENDENTE -> ENTREGUE (Inválido)
         self.assertFalse(self.pedido.atualizar_status(StatusPedido.ENTREGUE))
         self.assertEqual(self.pedido.status, StatusPedido.PENDENTE) # Status não deve mudar
@@ -180,10 +164,8 @@ class TestPedido(unittest.TestCase):
         self.assertEqual(pedido_cancelado.status, StatusPedido.CANCELADO)
 
     def test_processamento_pagamento_sucesso_cc(self):
-        """Verifica o registro de pagamento bem-sucedido com Cartão de Crédito.
-
-        Questão 5: O processamento de pagamento com diferentes métodos
-        """
+       # Questão 5: O processamento de pagamento com diferentes métodos
+        
         valor_pago_cc = Decimal("220.00") # Simula valor com juros
         num_parcelas = 3
         valor_parcela = Decimal("73.34")
@@ -199,17 +181,15 @@ class TestPedido(unittest.TestCase):
         self.assertAlmostEqual(self.pedido.valor_parcela, valor_parcela)
         self.assertIsNotNone(self.pedido.data_pagamento)
 
-    def test_processamento_pagamento_sucesso_pix(self):
-        """Verifica o registro de pagamento bem-sucedido com PIX.
-
-        Questão 5: O processamento de pagamento com diferentes métodos
-        """
+    def test_processamento_pagamento_sucesso_pix(self): 
+        #Questão 5: O processamento de pagamento com diferentes métodos
+        
         # Cria um pedido específico para PIX
         with patch("ecommerce.pedido.Pedido.calcular_frete", return_value=Decimal("10.00")):
             pedido_pix = Pedido(self.id_cliente, self.mock_carrinho, self.endereco, self.metodo_pagamento_pix)
         # Total inicial PIX = 201.00 + 10.00 = 211.00
 
-        valor_pago_pix = Decimal("199.95") # Simula valor com desconto PIX
+        valor_pago_pix = Decimal("199.95") #valor com desconto PIX
         id_transacao = "pix_trans_success"
 
         pedido_pix.atualizar_status(StatusPedido.PROCESSANDO_PAGAMENTO)
@@ -223,25 +203,20 @@ class TestPedido(unittest.TestCase):
         self.assertIsNotNone(pedido_pix.data_pagamento)
 
     def test_processamento_pagamento_falha(self):
-        """Verifica o registro de pagamento com falha.
-
-        Questão 5: O processamento de pagamento com diferentes métodos
-        """
-        id_transacao_falha = "trans_failed_123" # ID pode ou não ser gerado na falha
+        #Questão 5: O processamento de pagamento com diferentes métodos        
+        id_transacao_falha = "trans_failed_123" 
 
         self.pedido.atualizar_status(StatusPedido.PROCESSANDO_PAGAMENTO)
         self.pedido.registrar_pagamento(False, id_transacao_falha, Decimal("0.0"))
 
         self.assertEqual(self.pedido.status, StatusPedido.FALHA_PAGAMENTO)
-        self.assertIsNone(self.pedido.id_transacao_pagamento) # Não deve armazenar ID da falha
-        self.assertAlmostEqual(self.pedido.valor_total, self.valor_total_inicial_esperado) # Valor total não deve mudar
+        self.assertIsNone(self.pedido.id_transacao_pagamento) 
+        self.assertAlmostEqual(self.pedido.valor_total, self.valor_total_inicial_esperado) 
         self.assertIsNone(self.pedido.num_parcelas)
         self.assertIsNone(self.pedido.valor_parcela)
         self.assertIsNone(self.pedido.data_pagamento)
 
     def test_gerar_nota_fiscal_status_invalido(self):
-        """Verifica se gerar nota fiscal falha em status inválidos.
-        """
         # Status PENDENTE
         with self.assertRaisesRegex(ValueError, "Não é possível gerar nota fiscal.*PENDENTE"):
             self.pedido.gerar_nota_fiscal()
@@ -252,8 +227,6 @@ class TestPedido(unittest.TestCase):
             self.pedido.gerar_nota_fiscal()
 
     def test_gerar_nota_fiscal_status_valido(self):
-        """Verifica se a nota fiscal pode ser gerada em status válidos (ex: PAGO).
-        """
         self.pedido.atualizar_status(StatusPedido.PROCESSANDO_PAGAMENTO)
         self.pedido.registrar_pagamento(True, "nf_test", Decimal("216.00"))
         self.assertEqual(self.pedido.status, StatusPedido.PAGO)
@@ -274,7 +247,6 @@ class TestPedido(unittest.TestCase):
         except ValueError:
             self.fail("gerar_nota_fiscal() levantou ValueError inesperadamente em status PAGO")
 
-# Permite executar os testes diretamente pelo script
 if __name__ == '__main__':
     unittest.main()
 
